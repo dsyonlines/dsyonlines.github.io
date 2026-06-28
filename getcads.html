@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>线稿转效果图 - AI 设计助手</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+    .navbar {
+      width: 100%;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(15,12,41,0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      z-index: 1000;
+      box-sizing: border-box;
+    }
+    .nav-logo { height: 36px; cursor: pointer; transition: transform 0.3s ease; }
+    .nav-logo:hover { transform: scale(1.05); }
+    .nav-brand { display: flex; align-items: center; gap: 12px; }
+    .nav-brand-text { color: #fff; font-size: 16px; font-weight: 600; letter-spacing: 0.5px; }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-link {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      cursor: pointer;
+      transition: color 0.3s ease;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .main-content {
+      margin-top: 80px;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .header h1 {
+      color: #fff;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+    }
+    .workflow-card {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 32px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 700px;
+    }
+    .upload-area {
+      border: 2px dashed rgba(255,255,255,0.2);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-area:hover {
+      border-color: rgba(139,92,246,0.5);
+      background: rgba(139,92,246,0.1);
+    }
+    .upload-area.dragover {
+      border-color: rgba(139,92,246,0.8);
+      background: rgba(139,92,246,0.15);
+    }
+    .upload-icon { font-size: 48px; margin-bottom: 16px; }
+    .upload-text { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 8px; }
+    .upload-hint { color: rgba(255,255,255,0.4); font-size: 12px; }
+    .upload-input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .preview-image {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 12px;
+      object-fit: contain;
+      margin-top: 16px;
+    }
+    .remove-btn {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 16px;
+      background: rgba(239,68,68,0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .remove-btn:hover { background: rgba(239,68,68,0.3); }
+    .param-section {
+      margin-top: 24px;
+    }
+    .param-label {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .param-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .param-input:focus {
+      border-color: rgba(139,92,246,0.5);
+      background: rgba(255,255,255,0.15);
+    }
+    .param-input::placeholder { color: rgba(255,255,255,0.3); }
+    .material-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .material-tag {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      color: rgba(255,255,255,0.7);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .material-tag:hover {
+      background: rgba(139,92,246,0.2);
+      border-color: rgba(139,92,246,0.4);
+      color: #a78bfa;
+    }
+    .submit-btn {
+      width: 100%;
+      margin-top: 24px;
+      padding: 14px;
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(139,92,246,0.4);
+    }
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .loading-overlay {
+      margin-top: 24px;
+      padding: 16px 24px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      display: none;
+    }
+    .loading-overlay.active { display: flex; align-items: center; gap: 16px; }
+    .loading-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #8b5cf6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .loading-status {
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+      flex: 1;
+      text-align: left;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #8b5cf6, #6366f1);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      animation: progress-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes progress-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .result-section {
+      margin-top: 24px;
+      display: none;
+    }
+    .result-section.active { display: block; }
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .result-title {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .download-btn {
+      padding: 8px 20px;
+      background: rgba(139,92,246,0.2);
+      border: 1px solid rgba(139,92,246,0.4);
+      border-radius: 8px;
+      color: #a78bfa;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .download-btn:hover {
+      background: rgba(139,92,246,0.3);
+      color: #c4b5fd;
+    }
+    .result-image {
+      max-width: 100%;
+      max-height: 500px;
+      border-radius: 12px;
+      object-fit: contain;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .error-message {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 8px;
+      color: #ef4444;
+      font-size: 14px;
+    }
+    .uploaded-info {
+      margin-top: 8px;
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <img src="logo2.png" class="nav-logo" onclick="window.location.href='home.html'">
+      <span class="nav-brand-text">easyVisAI 智能图片创作</span>
+    </div>
+    <div class="nav-links">
+      <span class="nav-link" onclick="window.location.href='home.html'">首页</span>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="header">
+      <h1>线稿转效果图</h1>
+      <p>将线稿转换为真实效果图，支持多种风格和材质渲染</p>
+    </div>
+
+    <div class="workflow-card">
+      <div class="upload-area" id="uploadArea">
+        <span class="upload-icon">🎨</span>
+        <div class="upload-text">点击或拖拽上传线稿图</div>
+        <div class="upload-hint">支持 JPG、PNG 格式，建议上传清晰的线稿图</div>
+        <input type="file" id="imageInput" class="upload-input" accept="image/*">
+        <img id="previewImage" class="preview-image" style="display: none;">
+        <div id="uploadedInfo" class="uploaded-info" style="display: none;"></div>
+        <button id="removeBtn" class="remove-btn" style="display: none;" onclick="removeImage()">移除图片</button>
+      </div>
+
+      <div class="param-section">
+        <label class="param-label">材质效果</label>
+        <input type="text" id="promptInput" class="param-input" placeholder="输入材质描述，如：nude pu材质效果" value="修改为nude pu材质效果">
+        <div class="material-options">
+          <span class="material-tag" onclick="selectMaterial('修改为nude pu材质效果')">PU皮</span>
+          <span class="material-tag" onclick="selectMaterial('修改为真皮材质效果')">真皮</span>
+          <span class="material-tag" onclick="selectMaterial('修改为金属材质效果')">金属</span>
+          <span class="material-tag" onclick="selectMaterial('修改为木纹材质效果')">木纹</span>
+          <span class="material-tag" onclick="selectMaterial('修改为大理石材质效果')">大理石</span>
+          <span class="material-tag" onclick="selectMaterial('修改为布料材质效果')">布料</span>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" onclick="submitTask()">
+        <span>✨ 开始渲染</span>
+      </button>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">AI 正在渲染中...</div>
+        <div class="loading-status" id="loadingStatus">正在上传图片...</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="workflow-card result-section" id="resultSection">
+      <div class="result-header">
+        <div class="result-title">渲染结果</div>
+        <button class="download-btn" id="downloadBtn" onclick="downloadResult()">下载图片</button>
+      </div>
+      <img id="resultImage" class="result-image">
+      <div id="errorMessage" class="error-message" style="display: none;"></div>
+    </div>
+  </div>
+
+<script>
+if (window.location.protocol === 'file:') {
+  window.location.href = 'http://localhost:3000/getcads.html';
+}
+const API_BASE_URL = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+let uploadedUrls = [];
+let resultUrl = '';
+
+document.getElementById('imageInput').addEventListener('change', handleImageSelect);
+document.getElementById('uploadArea').addEventListener('dragover', (e) => {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.add('dragover');
+});
+document.getElementById('uploadArea').addEventListener('dragleave', () => {
+  document.getElementById('uploadArea').classList.remove('dragover');
+});
+document.getElementById('uploadArea').addEventListener('drop', (e) => {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    handleFile(files[0]);
+  }
+});
+
+async function handleImageSelect(e) {
+  const files = e.target.files;
+  if (files.length > 0) {
+    await handleFile(files[0]);
+  }
+}
+
+async function handleFile(file) {
+  if (!file.type.startsWith('image/')) {
+    alert('请上传图片文件');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('previewImage').src = e.target.result;
+    document.getElementById('previewImage').style.display = 'block';
+    document.getElementById('removeBtn').style.display = 'inline-block';
+    document.getElementById('uploadedInfo').textContent = `已上传: ${file.name}`;
+    document.getElementById('uploadedInfo').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await fetch(API_BASE_URL + '/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+    if (data.code === 0 && data.data && data.data.download_url) {
+      uploadedUrls = [data.data.download_url];
+    } else {
+      throw new Error(data.message || '上传失败');
+    }
+  } catch (error) {
+    console.error('Upload error:', error);
+    alert('上传失败: ' + error.message);
+  }
+}
+
+function removeImage() {
+  uploadedUrls = [];
+  document.getElementById('imageInput').value = '';
+  document.getElementById('previewImage').style.display = 'none';
+  document.getElementById('removeBtn').style.display = 'none';
+  document.getElementById('uploadedInfo').style.display = 'none';
+}
+
+function selectMaterial(material) {
+  document.getElementById('promptInput').value = material;
+}
+
+async function submitTask() {
+  if (uploadedUrls.length === 0) {
+    alert('请先上传图片');
+    return;
+  }
+
+  const prompt = document.getElementById('promptInput').value || '修改为nude pu材质效果';
+
+  document.getElementById('loadingOverlay').classList.add('active');
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('resultSection').classList.remove('active');
+  document.getElementById('errorMessage').style.display = 'none';
+  document.getElementById('progressFill').style.width = '10%';
+
+  try {
+    document.getElementById('loadingStatus').textContent = '正在提交任务...';
+    const submitResponse = await fetch(API_BASE_URL + '/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workflow: 'flux2',
+        images: uploadedUrls,
+        prompt: prompt
+      })
+    });
+    const submitData = await submitResponse.json();
+
+    if (!submitData.taskId) {
+      throw new Error(submitData.error || '提交任务失败');
+    }
+
+    document.getElementById('loadingStatus').textContent = '任务排队中...';
+    document.getElementById('progressFill').style.width = '20%';
+    await pollTaskStatus(submitData.taskId);
+
+  } catch (error) {
+    console.error('Submit error:', error);
+    document.getElementById('errorMessage').textContent = error.message;
+    document.getElementById('errorMessage').style.display = 'block';
+    document.getElementById('resultSection').classList.add('active');
+  } finally {
+    document.getElementById('loadingOverlay').classList.remove('active');
+    document.getElementById('submitBtn').disabled = false;
+  }
+}
+
+async function pollTaskStatus(taskId) {
+  let attempts = 0;
+  const maxAttempts = 60;
+
+  while (attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    try {
+      const response = await fetch(API_BASE_URL + '/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId })
+      });
+      const data = await response.json();
+
+      if (data.status === 'SUCCESS') {
+        document.getElementById('progressFill').style.width = '100%';
+        if (data.results && data.results.length > 0) {
+          resultUrl = data.results[0].url;
+          document.getElementById('resultImage').src = resultUrl;
+          document.getElementById('resultSection').classList.add('active');
+        } else {
+          throw new Error('没有生成结果');
+        }
+        return;
+      } else if (data.status === 'FAILED') {
+        throw new Error(data.errorMessage || '任务失败');
+      } else if (data.status === 'QUEUED') {
+        document.getElementById('loadingStatus').textContent = '排队中...';
+        const queueProgress = 20 + Math.min(attempts * 5, 20);
+        document.getElementById('progressFill').style.width = queueProgress + '%';
+      } else if (data.status === 'RUNNING') {
+        document.getElementById('loadingStatus').textContent = 'AI 正在渲染中...';
+        const runningProgress = 40 + Math.min(attempts * 3, 50);
+        document.getElementById('progressFill').style.width = runningProgress + '%';
+      }
+
+    } catch (error) {
+      throw error;
+    }
+
+    attempts++;
+  }
+
+  throw new Error('任务超时，请稍后重试');
+}
+
+function downloadResult() {
+  if (!resultUrl) return;
+  const link = document.createElement('a');
+  link.href = resultUrl;
+  link.download = `flux2_${Date.now()}.png`;
+  link.click();
+}
+</script>
+</body>
+</html>
