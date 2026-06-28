@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 设计助手</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 20px 40px;
+    }
+    .navbar {
+      width: 100%;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15,12,41,0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      z-index: 1000;
+      box-sizing: border-box;
+    }
+    .nav-logo {
+      height: 36px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .nav-logo:hover {
+      transform: scale(1.05);
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-brand-text {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .nav-link {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      cursor: pointer;
+      transition: color 0.3s ease;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+    .nav-link:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+    }
+    .nav-link.active {
+      color: #fff;
+    }
+    .nav-login {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(139,92,246,0.5);
+      background: transparent;
+      color: rgba(255,255,255,0.8);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .nav-login:hover {
+      background: rgba(139,92,246,0.2);
+      border-color: rgba(139,92,246,0.8);
+      color: #fff;
+    }
+    .main-content {
+      margin-top: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .logo {
+      font-size: 64px;
+      margin-bottom: 16px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    h1 {
+      color: #fff;
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      color: rgba(255,255,255,0.5);
+      font-size: 16px;
+    }
+    .cards-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 1000px;
+      width: 100%;
+    }
+    .cards-row {
+      display: grid;
+      gap: 24px;
+    }
+    .cards-row.top {
+      grid-template-columns: repeat(2, 1fr);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .cards-row.bottom {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .card {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 32px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(180deg, rgba(139,92,246,0.1) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .card:hover::before {
+      opacity: 1;
+    }
+    .card:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: rgba(139,92,246,0.4);
+      box-shadow: 0 20px 60px rgba(139,92,246,0.3);
+    }
+    .card-icon {
+      font-size: 56px;
+      margin-bottom: 20px;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+    .card:hover .card-icon {
+      transform: scale(1.1);
+    }
+    .card-title {
+      color: #fff;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .card-desc {
+      color: rgba(255,255,255,0.6);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .card-tag {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(139,92,246,0.3);
+      color: rgba(255,255,255,0.9);
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .card-arrow {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      color: rgba(255,255,255,0.3);
+      font-size: 24px;
+      transition: all 0.4s ease;
+    }
+    .card:hover .card-arrow {
+      color: rgba(139,92,246,0.8);
+      transform: translateX(4px);
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 32px; }
+      .cards-grid { gap: 16px; }
+      .cards-row.top { grid-template-columns: 1fr; }
+      .cards-row.bottom { grid-template-columns: 1fr; }
+      .card { padding: 24px; }
+      .card-icon { font-size: 40px; }
+    }
+    .footer {
+      margin-top: 48px;
+      text-align: center;
+      color: rgba(255,255,255,0.3);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <img src="logo2.png" class="nav-logo" onclick="window.location.href='home.html'" />
+      <span class="nav-brand-text">easyVisAI 智能图片创作</span>
+    </div>
+    <div class="nav-links">
+      <span class="nav-link active" onclick="window.location.href='home.html'">首页</span>
+      <button class="nav-login">登录</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="header">
+      <div class="logo">✨</div>
+      <h1></h1>
+      <div class="subtitle">智能图像处理 · 一键生成专业效果</div>
+    </div>
+
+    <div class="cards-grid">
+    <div class="cards-row top">
+      <div class="card" onclick="goToPage('white-bg')">
+        <span class="card-tag">热门</span>
+        <span class="card-icon">🖼️</span>
+        <div class="card-title">产品白底图/扣图</div>
+        <div class="card-desc">将产品照片转换为纯净的白底图，适合电商展示和产品目录</div>
+        <span class="card-arrow">→</span>
+      </div>
+
+      <div class="card" onclick="goToPage('remove-watermark')">
+        <span class="card-icon">🔍</span>
+        <div class="card-title">去除图片水印和LOGO</div>
+        <div class="card-desc">智能识别并去除图片中的水印，保留原图质量</div>
+        <span class="card-arrow">→</span>
+      </div>
+    </div>
+
+    <div class="cards-row bottom">
+      <div class="card" onclick="goToPage('photo-to-sketch')">
+        <span class="card-icon">✏️</span>
+        <div class="card-title">照片转线稿</div>
+        <div class="card-desc">智能提取照片轮廓，生成清晰的线稿图，可用于设计草图</div>
+        <span class="card-arrow">→</span>
+      </div>
+
+      <div class="card" onclick="goToPage('flux2')">
+        <span class="card-tag">推荐</span>
+        <span class="card-icon">🎨</span>
+        <div class="card-title">线稿转效果图</div>
+        <div class="card-desc">将线稿转换为真实效果图，支持多种风格和材质渲染</div>
+        <span class="card-arrow">→</span>
+      </div>
+
+      <div class="card" onclick="goToPage('material-ref')">
+        <span class="card-icon">🧵</span>
+        <div class="card-title">产品材质参考</div>
+        <div class="card-desc">生成不同材质的产品效果图，便于材质选择和对比</div>
+        <span class="card-arrow">→</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    © 2026 EasyVisAI 智能图片创作. All rights reserved.
+  </div>
+  </div>
+
+<script>
+function goToPage(page) {
+  switch(page) {
+    case 'white-bg':
+      window.location.href = 'whitebg.html';
+      break;
+    case 'photo-to-sketch':
+      window.location.href = 'sketch.html';
+      break;
+    case 'remove-watermark':
+      window.location.href = 'watermark.html';
+      break;
+    case 'flux2':
+      window.location.href = 'getcads.html';
+      break;
+    case 'material-ref':
+      window.location.href = 'material.html';
+      break;
+  }
+}
+</script>
+</body>
+</html>
